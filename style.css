@@ -1,0 +1,8 @@
+body { font-family: 'Segoe UI', Arial, sans-serif; margin: 2rem; background: #f8fcff; }
+h1 { color: #2365ad; }
+input[type="file"] { margin: 1rem 0; }
+#table-container { margin-top: 2rem; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { border: 1px solid #d2e2ec; padding: 0.5rem 0.75rem; }
+th { background: #2365ad; color: #fff; }
+tr:nth-child(even) { background: #f4f9fc; }
