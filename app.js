@@ -1,36 +1,107 @@
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fcff; margin: 0; }
-.container { max-width: 98vw; margin: 2rem auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 40px rgba(33,87,244,0.07); padding: 2rem; }
-header { border-bottom: 1px solid #e1e8ee; margin-bottom: 1.3rem; }
-h1 { color: #2365ad; font-size: 2.2rem; margin-bottom: 0.2em; }
-input[type="file"], input[type="text"] { padding: 0.4rem 0.7rem; margin-right: 1rem; font-size: 1em; }
-input[type="file"] { margin-bottom: 0.4em; }
-.input-section { margin-bottom: 1.2rem; }
-.filter-section { margin: 14px 0 0 0; display: flex; gap: 1.4rem; flex-wrap: wrap; }
-.filter-section label { font-weight: 500; }
+let fullData = [];
+let headers = [];
+let tableContainer = document.getElementById('table-container');
+let filterAssetType = document.getElementById('filter-asset-type');
 
-select, input[type="text"] {
-  border: 1px solid #a2b7cf;
-  border-radius: 4px;
-  outline: 0;
-  width: auto;
-  background: #f4f9fc;
+document.getElementById('file-input').addEventListener('change', function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const csvData = e.target.result;
+    parseCSVAndDisplay(csvData);
+  };
+  reader.readAsText(file);
+});
+
+function parseCSVAndDisplay(csvData) {
+  const rows = csvData.trim().split('\n').map(r => r.trim());
+  headers = rows[0].split(',');
+  fullData = rows.slice(1).map(row => {
+    const cols = row.split(',');
+    let obj = {};
+    headers.forEach((header, i) => {
+      obj[header] = cols[i] ? cols[i].trim() : '';
+    });
+    return obj;
+  });
+
+  populateAssetTypeFilter();
+  applyFiltersAndDisplay();
 }
-#table-container { margin-top: 1.5rem; overflow-x: auto; }
 
-table { border-collapse: collapse; width: 100%; background: #fff; }
-th, td { padding: 0.52rem 0.7rem; text-align: left; font-size: 0.98em; border: 1px solid #eaf2fa; }
-th { background: #2365ad; color: #fff; position: sticky; top: 0; z-index: 1; }
-tr:nth-child(even) { background: #f4f9fc; }
-tr.selected { background: #e3f5c9; }
-.status-Active { color: #197f30; font-weight: 700; background: #e3f5e9; }
-.status-INACTIVE,
-.status-Marked\\ For\\ Disposal-Tenured,
-.status-EPCBlocked { color: #a32929; font-weight: 700; background: #f8e5e5; }
-.status-Delivered { color: #005c8b; font-weight: 700; background: #e4f1fa; }
-.status-Freepool { color: #c98513; font-weight: 700; background: #fff9d7; }
-
-@media (max-width: 900px) {
-  .container { padding: 1.1rem; }
-  th, td { font-size: 0.96em; padding: 0.4rem 0.4rem;}
-  .filter-section { flex-direction: column; gap: 0.7rem; }
+function populateAssetTypeFilter() {
+  let assetTypes = new Set();
+  fullData.forEach(item => {
+    if (item['Asset Type']) {
+      assetTypes.add(item['Asset Type']);
+    }
+  });
+  // Clear existing options except first
+  filterAssetType.options.length = 1;
+  Array.from(assetTypes).sort().forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = type;
+    filterAssetType.appendChild(option);
+  });
 }
+
+function applyFiltersAndDisplay() {
+  let serialSearch = document.getElementById('search-serial').value.trim().toLowerCase();
+  let makeSearch = document.getElementById('search-make').value.trim().toLowerCase();
+  let assetTypeFilter = filterAssetType.value;
+  let foundStatusFilter = document.getElementById('filter-found-status').value;
+
+  let filteredData = fullData.filter(item => {
+    let passesSerial = serialSearch === '' || (item['Serial Number'] && item['Serial Number'].toLowerCase().includes(serialSearch));
+    let passesMake = makeSearch === '' || (item['Make'] && item['Make'].toLowerCase().includes(makeSearch));
+    let passesAssetType = assetTypeFilter === '' || item['Asset Type'] === assetTypeFilter;
+    let passesFoundStatus = true;
+    if (foundStatusFilter === 'found') {
+      passesFoundStatus = (item['Same Asset or Additional Found Asset'] && item['Same Asset or Additional Found Asset'].toLowerCase() === 'same asset');
+    } else if (foundStatusFilter === 'notfound') {
+      passesFoundStatus = !(item['Same Asset or Additional Found Asset'] && item['Same Asset or Additional Found Asset'].toLowerCase() === 'same asset');
+    }
+    return passesSerial && passesMake && passesAssetType && passesFoundStatus;
+  });
+
+  displayTable(filteredData);
+}
+
+function displayTable(data) {
+  if (data.length === 0) {
+    tableContainer.innerHTML = '<div class="no-results">No matching assets found</div>';
+    return;
+  }
+
+  let table = document.createElement('table');
+  // Table header
+  const trHead = document.createElement('tr');
+  headers.forEach(header => {
+    let th = document.createElement('th');
+    th.textContent = header;
+    trHead.appendChild(th);
+  });
+  table.appendChild(trHead);
+
+  // Table rows
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    headers.forEach(header => {
+      const td = document.createElement('td');
+      td.textContent = item[header] || '';
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+
+  tableContainer.innerHTML = '';
+  tableContainer.appendChild(table);
+}
+
+// Attach filter event listeners
+document.getElementById('search-serial').addEventListener('input', applyFiltersAndDisplay);
+document.getElementById('search-make').addEventListener('input', applyFiltersAndDisplay);
+filterAssetType.addEventListener('change', applyFiltersAndDisplay);
+document.getElementById('filter-found-status').addEventListener('change', applyFiltersAndDisplay);
