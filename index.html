@@ -3,12 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <title>PAV Asset Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>PAV Asset Verification Web App</h1>
-  <input type="file" id="file-input" accept=".csv" />
+<div class="container">
+  <header>
+    <h1>PAV Asset Verification</h1>
+    <p>Upload your latest MIS file (.csv) for live asset status verification and filtering.</p>
+  </header>
+
+  <section class="input-section">
+    <input type="file" id="file-input" accept=".csv" />
+    <input type="text" id="global-search" placeholder="🔍 Search all columns..." />
+  </section>
+
+  <section id="filters" class="filter-section" style="display:none;">
+    <label>
+      Asset Status:
+      <select id="asset-status-filter"><option value="">All</option></select>
+    </label>
+    <label>
+      Asset Type:
+      <select id="asset-type-filter"><option value="">All</option></select>
+    </label>
+    <label>
+      Branch Name:
+      <select id="branch-name-filter"><option value="">All</option></select>
+    </label>
+  </section>
+
   <div id="table-container"></div>
-  <script src="app.js"></script>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
